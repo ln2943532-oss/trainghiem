@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MINING KINGDOM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FFD700', secondary: '#FFF8E6', dark: '#5C3A00',
+                        success: '#22C55E', danger: '#EF4444', warning: '#FF8C00',
+                        taskBlue: '#4F46E5', mineBlue: '#2563EB', wheelPurple: '#9333EA',
+                        refGreen: '#10B981', kitchen: '#F97316', factory: '#EA580C',
+                        taskBorder: '#10B981', taskBg: '#FFF9E8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #FFF8E6; color: #5C3A00; font-family: system-ui, sans-serif; min-height: 100vh; padding-bottom: 30px; }
+        button { border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.1s; }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; background: #93C5FD !important; }
+
+        /* HEADER */
+        .header { position: sticky; top: 0; background: #FFD700; padding: 20px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; z-index: 99; border-radius: 0 0 20px 20px; }
+        .header-left { display: flex; align-items: flex-start; gap: 10px; }
+        .header-title { font-size: 28px; font-weight: 800; line-height: 1.2; }
+        .header-sub { font-size: 14px; opacity: 0.9; margin-top: 2px; }
+        .balance { display: flex; gap: 8px; flex-wrap: wrap; }
+        .balance-item { background: rgba(255,255,255,0.9); padding: 8px 14px; border-radius: 24px; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+
+        /* TAB */
+        .tab-nav { display: flex; background: rgba(255,255,255,0.9); margin: 12px 16px; border-radius: 16px; overflow-x: auto; gap: 4px; padding: 6px; }
+        .tab-btn { flex: 1; min-width: 90px; padding: 12px 8px; font-size: 15px; font-weight: 500; background: transparent; border-radius: 12px; color: #8B5A00; white-space: nowrap; }
+        .tab-btn.active { background: #FFD700; color: #5C3A00; font-weight: 700; }
+        .tab-content { display: none; padding: 0 16px; }
+        .tab-content.active { display: block; }
+
+        /* PHẦN NHIỆM VỤ - CHỮ NHỎ GỌN */
+        .card-task { border: 4px solid #FFD700; background: #FFF9E8; border-radius: 20px; padding: 18px; margin: 12px 0; }
+        .task-title { font-size: 26px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .task-note { background: #FFEFD0; border: 3px solid #FFD700; border-radius: 16px; padding: 12px; margin-bottom: 20px; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; line-height: 1.4; }
+        .task-item { border: 3px solid #10B981; background: #FFFFF0; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+        .task-item:last-child { margin-bottom: 0; }
+        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .task-name { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .task-count { background: #FFF2B8; padding: 5px 10px; border-radius: 10px; font-size: 15px; font-weight: 600; }
+        .task-reward { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 5px; }
+        .task-btn { width: 100%; padding: 12px; background: #3B82F6; color: white; font-size: 17px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+        /* CARD KHÁC */
+        .card { background: white; border-radius: 16px; padding: 16px; margin: 12px 0; border: 3px solid #FFD700; }
+        .card-sm { border-radius: 12px; padding: 14px; margin: 10px 0; border: 2px solid #10B981; background: #FAFFFA; }
+        .card-kitchen { border-color: #F97316; background: #FFF7ED; }
+        .card-factory { border-color: #EA580C; background: #FFF7ED; }
+        .card-sell { border-color: #22C55E; background: #F0FDF4; }
+        .card-sell-food { border-color: #8B5CF6; background: #F5F3FF; }
+        .progress { height: 10px; background: #E5E7EB; border-radius: 5px; overflow: hidden; margin: 8px 0; }
+        .progress-fill { height: 100%; background: #FF8C00; width: 0%; transition: width 0.1s linear; }
+        .alert { background: #FFF3E0; border: 2px solid #FFD700; border-radius: 12px; padding: 12px; margin: 10px 0; font-weight: 600; color: #B45309; font-size: 15px; line-height: 1.5; }
+        .sell-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #FDE68A; gap: 8px; flex-wrap: wrap; }
+        .sell-row:last-child { border-bottom: none; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 14px 24px; border-radius: 12px; display: none; z-index: 9999; font-size: 16px; max-width: 90%; text-align: center; font-weight: 500; }
+        .worker-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-size: 14px; }
+        .worker-row:last-child { border-bottom: none; }
+        .wheel-wrap { position: relative; width: 280px; height: 280px; margin: 20px auto; }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 36px; color: #EF4444; z-index: 10; }
+        .wheel { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #9333EA; position: relative; transition: transform 4s cubic-bezier(0.17, 0.67, 0.13, 0.99); overflow: hidden; }
+        .wheel-sector { position: absolute; width: 50%; height: 50%; left: 50%; top: 0; transform-origin: bottom left; display: flex; align-items: center; justify-content: center; }
+        .wheel-sector span { position: absolute; left: 25%; top: 15%; transform: rotate(36deg); font-weight: 700; font-size: 14px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <span class="text-3xl">⛏️</span>
+            <div>
+                <div class="header-title">MINING KINGDOM</div>
+                <div class="header-sub">Chạy nền ✅</div>
+            </div>
+        </div>
+        <div class="balance">
+            <div class="balance-item">💰 <span id="gold">142</span></div>
+            <div class="balance-item">🧲 <span id="iron">44</span></div>
+            <div class="balance-item">🎫 <span id="ticket">6</span></div>
+            <div class="balance-item">⚡ <span id="total-speed">0,852</span> q/s</div>
+        </div>
+    </div>
+
+    <!-- TAB - ĐÃ XÓA GIỚI THIỆU -->
+    <div class="tab-nav">
+        <button onclick="openTab('farm')" class="tab-btn active">🌾 Nông Trại</button>
+        <button onclick="openTab('mine')" class="tab-btn">⛏️ Đào Quặng</button>
+        <button onclick="openTab('wheel')" class="tab-btn">🎡 Vòng Quay</button>
+        <button onclick="openTab('task')" class="tab-btn">🔗 Nhiệm Vụ</button>
+    </div>
+
+    <!-- TAB NÔNG TRẠI - ĐÃ THÊM PHẦN BÁN THỨC ĂN TỔNG HỢP -->
+    <div class="tab-content active" id="tab-farm">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">🌱 KHU TRỒNG TRỌT & THU HOẠCH</h2>
+            <div class="card-sm">
+                <h3 class="font-bold mb-2">🍎 Vườn Cây Ăn Quả</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Hạt: <span id="fruit-seed">10</span> 🌱</span>
+                    <span>Quả: <span id="fruit-cnt">0</span> 🍎</span>
+                </div>
+                <div class="progress"><div id="fruit-prog" class="progress-fill"></div></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="buySeed('fruit')" class="px-4 py-2 bg-gray-200">Mua hạt (10💰)</button>
+                    <button onclick="harvest('fruit')" class="px-4 py-2 bg-green-500 text-white">Thu hoạch</button>
+                </div>
+            </div>
+            <div class="card-sm">
+                <h3 class="font-bold mb-2">🥬 Ruộng Trồng Rau</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Hạt: <span id="vege-seed">10</span> 🌱</span>
+                    <span>Rau: <span id="vege-cnt">0</span> 🥬</span>
+                </div>
+                <div class="progress"><div id="vege-prog" class="progress-fill"></div></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="buySeed('vege')" class="px-4 py-2 bg-gray-200">Mua hạt (8💰)</button>
+                    <button onclick="harvest('vege')" class="px-4 py-2 bg-green-500 text-white">Thu hoạch</button>
+                </div>
+            </div>
+            <div class="card-sm">
+                <h3 class="font-bold mb-2">🌾 Ruộng Lúa</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Hạt: <span id="rice-seed">5</span> 🌱</span>
+                    <span>Lúa: <span id="rice-cnt">0</span> 🌾</span>
+                </div>
+                <div class="progress"><div id="rice-prog" class="progress-fill"></div></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="buySeed('rice')" class="px-4 py-2 bg-gray-200">Mua hạt (12💰)</button>
+                    <button onclick="harvest('rice')" class="px-4 py-2 bg-green-500 text-white">Thu hoạch</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-kitchen">
+            <h2 class="text-xl font-bold mb-4">🍳 BẾP NẤU THỨC ĂN</h2>
+            <div class="card-sm card-kitchen">
+                <h3 class="font-bold mb-2">🥤 Nước Ép Trái Cây</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Nguyên liệu: <span id="juice-mat">0</span> 🍎</span>
+                    <span>Thành phẩm: <span id="juice-cnt">0</span> 🥤</span>
+                </div>
+                <div class="progress"><div id="juice-prog" class="progress-fill"></div></div>
+                <button onclick="makeFood('juice')" class="w-full py-2 bg-orange-500 text-white mt-2">Chế biến (5 quả/lần)</button>
+            </div>
+            <div class="card-sm card-kitchen">
+                <h3 class="font-bold mb-2">🥗 Salad Rau Củ</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Nguyên liệu: <span id="salad-mat">0</span> 🥬</span>
+                    <span>Thành phẩm: <span id="salad-cnt">0</span> 🥗</span>
+                </div>
+                <div class="progress"><div id="salad-prog" class="progress-fill"></div></div>
+                <button onclick="makeFood('salad')" class="w-full py-2 bg-orange-500 text-white mt-2">Chế biến (4 cây/lần)</button>
+            </div>
+            <div class="card-sm card-kitchen">
+                <h3 class="font-bold mb-2">🍚 Chế Biến Từ Lúa</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Nguyên liệu: <span id="food-mat">0</span> 🌾</span>
+                    <span>Thành phẩm: <span id="food-cnt">0</span> 🍚</span>
+                </div>
+                <div class="progress"><div id="food-prog" class="progress-fill"></div></div>
+                <button onclick="makeFood('food')" class="w-full py-2 bg-orange-500 text-white mt-2">Chế biến (6 lúa/lần)</button>
+            </div>
+        </div>
+
+        <div class="card card-factory">
+            <h2 class="text-xl font-bold mb-4">🏭 XƯỞNG SẢN XUẤT</h2>
+            <div class="card-sm card-factory">
+                <h3 class="font-bold mb-2">🥩 Xưởng Chế Biến Thịt</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Nguyên liệu: <span id="meat-mat">5</span> 🐷</span>
+                    <span>Thành phẩm: <span id="meat-cnt">0</span> 🥩</span>
+                </div>
+                <div class="progress"><div id="meat-prog" class="progress-fill"></div></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="buyMat('meat')" class="px-4 py-2 bg-gray-200">Mua nguyên liệu (15💰)</button>
+                    <button onclick="makeProduce('meat')" class="px-4 py-2 bg-orange-600 text-white">Sản xuất</button>
+                </div>
+            </div>
+            <div class="card-sm card-factory">
+                <h3 class="font-bold mb-2">🥖 Xưởng Làm Bánh Mì</h3>
+                <div class="flex justify-between mb-1">
+                    <span>Nguyên liệu: <span id="bread-mat">5</span> 🌾</span>
+                    <span>Thành phẩm: <span id="bread-cnt">0</span> 🥖</span>
+                </div>
+                <div class="progress"><div id="bread-prog" class="progress-fill"></div></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="buyMat('bread')" class="px-4 py-2 bg-gray-200">Mua nguyên liệu (20💰)</button>
+                    <button onclick="makeProduce('bread')" class="px-4 py-2 bg-orange-600 text-white">Sản xuất</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-sell">
+            <h2 class="text-xl font-bold mb-4">🛒 KHU BÁN SẢN PHẨM NGUYÊN LIỆU</h2>
+            <h3 class="font-bold mb-2 text-green-700">🌾 Sản phẩm nông trại</h3>
+            <div class="sell-row">
+                <span>🍎 Quả tươi: <span id="sell-fruit">0</span></span>
+                <span class="font-bold">1💰/quả</span>
+                <button onclick="sellItem('fruit')" class="px-3 py-1 bg-green-500 text-white text-sm">Bán hết</button>
+            </div>
+            <div class="sell-row">
+                <span>🥬 Rau tươi: <span id="sell-vege">0</span></span>
+                <span class="font-bold">1💰/cây</span>
+                <button onclick="sellItem('vege')" class="px-3 py-1 bg-green-500 text-white text-sm">Bán hết</button>
+            </div>
+            <div class="sell-row">
+                <span>🌾 Lúa: <span id="sell-rice">0</span></span>
+                <span class="font-bold">2💰/bó</span>
+                <button onclick="sellItem('rice')" class="px-3 py-1 bg-green-500 text-white text-sm">Bán hết</button>
+            </div>
+
+            <h3 class="font-bold mb-2 mt-4 text-red-700">🏭 Sản phẩm xưởng</h3>
+            <div class="sell-row">
+                <span>🥩 Thịt: <span id="sell-meat">0</span></span>
+                <span class="font-bold">3💰/kg</span>
+                <button onclick="sellItem('meat')" class="px-3 py-1 bg-green-500 text-white text-sm">Bán hết</button>
+            </div>
+            <div class="sell-row">
+                <span>🥖 Bánh mì: <span id="sell-bread">0</span></span>
+                <span class="font-bold">5💰/ổ</span>
+                <button onclick="sellItem('bread')" class="px-3 py-1 bg-green-500 text-white text-sm">Bán hết</button>
+            </div>
+        </div>
+
+        <!-- === MỚI: PHẦN BÁN THỨC ĂN TỔNG HỢP - GIÁ 3💰/SẢN PHẨM === -->
+        <div class="card card-sell-food">
+            <h2 class="text-xl font-bold mb-4 text-purple-800">🍽️ BÁN THỨC ĂN TỔNG HỢP</h2>
+            <p class="text-sm mb-3 text-purple-700">💡 Giá cố định: <strong>3💰/mỗi sản phẩm</strong></p>
+            <div class="sell-row">
+                <span>🥤 Nước ép trái cây: <span id="sell-juice">0</span></span>
+                <span class="font-bold">3💰/ly</span>
+                <button onclick="sellFoodFinal('juice')" class="px-3 py-1 bg-purple-500 text-white text-sm">Bán hết</button>
+            </div>
+            <div class="sell-row">
+                <span>🥗 Salad rau củ: <span id="sell-salad">0</span></span>
+                <span class="font-bold">3💰/đĩa</span>
+                <button onclick="sellFoodFinal('salad')" class="px-3 py-1 bg-purple-500 text-white text-sm">Bán hết</button>
+            </div>
+            <div class="sell-row">
+                <span>🍚 Chế biến từ lúa: <span id="sell-food">0</span></span>
+                <span class="font-bold">3💰/phần</span>
+                <button onclick="sellFoodFinal('food')" class="px-3 py-1 bg-purple-500 text-white text-sm">Bán hết</button>
+            </div>
+            <div class="mt-3 p-2 bg-purple-100 rounded-lg text-sm">
+                Tổng số thức ăn: <strong id="total-food">0</strong> sản phẩm | Tổng giá trị có thể bán: <strong id="total-food-value">0</strong>💰
+            </div>
+            <button onclick="sellAllFood()" class="w-full py-2 bg-purple-600 text-white font-bold mt-3">📦 BÁN HẾT TẤT CẢ THỨC ĂN</button>
+        </div>
+    </div>
+
+    <!-- TAB ĐÀO QUẶNG -->
+    <div class="tab-content" id="tab-mine">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-4">⛏️ QUẢN LÝ THỢ & ĐÀO QUẶNG</h2>
+            <div class="alert mb-3">💡 Tỷ lệ quy đổi: 7 Sắt = 1💰 | 1 Vàng = 3💰 | 1 Kim cương = 10💰</div>
+            <h3 class="font-bold mb-3">👷 Danh sách thợ</h3>
+            <div class="border border-blue-200 rounded-lg p-3 mb-4">
+                <div class="worker-row"><span>Công nhân</span><span>3.000đ | 0,020 q/s</span><button onclick="buyWorker('congnhan')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Thợ tập sự</span><span>6.000đ | 0,032 q/s</span><button onclick="buyWorker('tapsu')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Thợ lành nghề</span><span>10.000đ | 0,048 q/s</span><button onclick="buyWorker('lanhnghe')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Thợ chuyên nghiệp</span><span>17.000đ | 0,072 q/s</span><button onclick="buyWorker('chuyennghiep')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Kỹ sư mỏ</span><span>28.000đ | 0,105 q/s</span><button onclick="buyWorker('kysu')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Quản đốc</span><span>45.000đ | 0,145 q/s</span><button onclick="buyWorker('quan-doc')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Robot đào</span><span>70.000đ | 0,185 q/s</span><button onclick="buyWorker('robot')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+                <div class="worker-row"><span>Robot AI</span><span>105.000đ | 0,225 q/s</span><button onclick="buyWorker('robot-ai')" class="px-2 py-1 bg-blue-500 text-white text-xs">Mua</button></div>
+            </div>
+            <div class="flex justify-between p-3 bg-blue-50 rounded-lg mb-4">
+                <div><div class="text-sm text-gray-600">Tổng vốn</div><div class="text-xl font-bold" id="total-capital">0đ</div></div>
+                <div class="text-right"><div class="text-sm text-gray-600">Tốc độ</div><div class="text-xl font-bold" id="total-speed-mine">0,852 q/s</div></div>
+            </div>
+            <div class="mb-2">🧲 Sắt: <span id="iron-mine">44</span> kg</div>
+            <div class="mb-2">✨ Vàng: <span id="gold-ore">0</span> kg</div>
+            <div class="mb-3">💎 Kim cương: <span id="dia">0</span> viên</div>
+            <button onclick="convertOre()" class="w-full py-3 bg-blue-600 text-white font-bold">Đổi quặng → Tiền</button>
+        </div>
+    </div>
+
+    <!-- TAB VÒNG QUAY -->
+    <div class="tab-content" id="tab-wheel">
+        <div class="card">
+            <h2 class="text-xl font-bold mb-3 text-center">🎡 VÒNG QUAY MAY MẮN</h2>
+            <p class="text-center text-sm mb-4">Mỗi lượt quay tốn 1 vé 🎫 | Vé: <span id="t-count">6</span></p>
+            <div class="wheel-wrap">
+                <div class="wheel-pointer">▼</div>
+                <div id="wheel" class="wheel">
+                    <div class="wheel-sector" style="transform: rotate(0deg) skewY(-18deg); background:#EF4444;"><span>100💰</span></div>
+                    <div class="wheel-sector" style="transform: rotate(72deg) skewY(-18deg); background:#F59E0B;"><span>+5 Vé</span></div>
+                    <div class="wheel-sector" style="transform: rotate(144deg) skewY(-18deg); background:#FACC15;"><span>500 Sắt</span></div>
+                    <div class="wheel-sector" style="transform: rotate(216deg) skewY(-18deg); background:#22C55E;"><span>50💰</span></div>
+                    <div class="wheel-sector" style="transform: rotate(288deg) skewY(-18deg); background:#3B82F6;"><span>10 Kim Cương</span></div>
+                </div>
+            </div>
+            <button id="spin-btn" onclick="startSpin()" class="w-full py-3 bg-purple-600 text-white font-bold">🎯 QUAY NGAY!</button>
+        </div>
+        <div class="card mt-3">
+            <h3 class="font-bold mb-3">📅 ĐIỂM DANH HÀNG NGÀY</h3>
+            <button onclick="checkin()" class="w-full py-2 bg-green-500 text-white">✅ Nhận vé ngẫu nhiên</button>
+        </div>
+    </div>
+
+    <!-- TAB NHIỆM VỤ -->
+    <div class="tab-content" id="tab-task">
+        <div class="card-task">
+            <h2 class="task-title">🔗 NHIỆM VỤ VƯỢT LINK</h2>
+            <div class="task-note">
+                <span>✅</span> Tối đa 2 lượt/ngày
+            </div>
+
+            <div class="task-item">
+                <div class="task-header">
+                    <h4 class="task-name">🔗 Link4m</h4>
+                    <span class="task-count">Đã làm: <span id="link4m-done">0</span>/2</span>
+                </div>
+                <p class="task-reward">Thưởng: +150 Sắt +150💰</p>
+                <button id="btn-link4m" onclick="openAndClaim('link4m')" class="task-btn">📩 Mở link & chờ nhận thưởng</button>
+            </div>
+
+            <div class="task-item">
+                <div class="task-header">
+                    <h4 class="task-name">🔗 Linktop</h4>
+                    <span class="task-count">Đã làm: <span id="linktop-done">0</span>/2</span>
+                </div>
+                <p class="task-reward">Thưởng: +150 Sắt +150💰</p>
+                <button id="btn-linktop" onclick="openAndClaim('linktop')" class="task-btn">📩 Mở link & chờ nhận thưởng</button>
+            </div>
+
+            <div class="task-item">
+                <div class="task-header">
+                    <h4 class="task-name">🔗 Taplayma</h4>
+                    <span class="task-count">Đã làm: <span id="taplayma-done">0</span>/2</span>
+                </div>
+                <p class="task-reward">Thưởng: +150 Sắt +150💰</p>
+                <button id="btn-taplayma" onclick="openAndClaim('taplayma')" class="task-btn">📩 Mở link & chờ nhận thưởng</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // === CẤU HÌNH ===
+        const LINKS = {link4m:"https://link4m.org/d8D4xp", linktop:"https://linktop.one/WtBOGMog0r", taplayma:"https://taplayma.com/link/sOqXte7fsR"};
+        const WAIT_TIME = 65; // Chạy ngầm 65 giây
+        const FOOD_PRICE = 3; // Giá bán thức ăn tổng hợp: 3💰/sản phẩm
+        const WORKER_LIST = {
+            "congnhan":{price:3000,speed:0.020},"tapsu":{price:6000,speed:0.032},"lanhnghe":{price:10000,speed:0.048},
+            "chuyennghiep":{price:17000,speed:0.072},"kysu":{price:28000,speed:0.105},"quan-doc":{price:45000,speed:0.145},
+            "robot":{price:70000,speed:0.185},"robot-ai":{price:105000,speed:0.225}
+        };
+        let isSpinning = false;
+
+        // === DỮ LIỆU ===
+        function genId(){return Math.random().toString(36).slice(2,10).toUpperCase();}
+        let userId = localStorage.getItem('mk_user_id') || genId();
+        localStorage.setItem('mk_user_id',userId);
+
+        let data = JSON.parse(localStorage.getItem('mk_data') || `{
+            "gold":142,"ticket":6,"iron":44,"goldOre":0,"dia":0,"totalSpeed":0.852,"totalCapital":0,
+            "fruitSeed":10,"vegeSeed":10,"riceSeed":5,"fruit":0,"vege":0,"rice":0,"fruitProg":0,"vegeProg":0,"riceProg":0,
+            "juice":0,"salad":0,"food":0,"juiceProg":0,"saladProg":0,"foodProg":0,
+            "meatMat":5,"breadMat":5,"meat":0,"bread":0,"meatProg":0,"breadProg":0,
+            "workers":{},"checkinDate":"",
+            "task":{"link4m":0,"linktop":0,"taplayma":0,"lastReset":""}
+        }`);
+
+        // === HÀM CHUNG ===
+        function save(){localStorage.setItem('mk_data',JSON.stringify(data));}
+        function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',3500);}
+        function openTab(tab){document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById(`tab-${tab}`).classList.add('active');event.target.classList.add('active');updateUI();}
+
+        // === CẬP NHẬT GIAO DIỆN ===
+        function updateUI(){
+            document.getElementById('gold').textContent=Math.floor(data.gold);
+            document.getElementById('iron').textContent=Math.floor(data.iron);
+            document.getElementById('ticket').textContent=Math.floor(data.ticket);
+            document.getElementById('t-count').textContent=Math.floor(data.ticket);
+            document.getElementById('total-speed').textContent=data.totalSpeed.toFixed(3);
+            document.getElementById('total-capital').textContent=data.totalCapital+'đ';
+            document.getElementById('total-speed-mine').textContent=data.totalSpeed.toFixed(3)+' q/s';
+            document.getElementById('link4m-done').textContent=data.task.link4m;
+            document.getElementById('linktop-done').textContent=data.task.linktop;
+            document.getElementById('taplayma-done').textContent=data.task.taplayma;
+            document.getElementById('fruit-seed').textContent=data.fruitSeed;
+            document.getElementById('vege-seed').textContent=data.vegeSeed;
+            document.getElementById('rice-seed').textContent=data.riceSeed;
+            document.getElementById('fruit-cnt').textContent=Math.floor(data.fruit);
+            document.getElementById('vege-cnt').textContent=Math.floor(data.vege);
+            document.getElementById('rice-cnt').textContent=Math.floor(data.rice);
+            document.getElementById('fruit-prog').style.width=data.fruitProg+'%';
+            document.getElementById('vege-prog').style.width=data.vegeProg+'%';
+            document.getElementById('rice-prog').style.width=data.riceProg+'%';
+            document.getElementById('juice-cnt').textContent=Math.floor(data.juice);
+            document.getElementById('salad-cnt').textContent=Math.floor(data.salad);
+            document.getElementById('food-cnt').textContent=Math.floor(data.food);
+            document.getElementById('juice-prog').style.width=data.juiceProg+'%';
+            document.getElementById('salad-prog').style.width=data.saladProg+'%';
+            document.getElementById('food-prog').style.width=data.foodProg+'%';
+            document.getElementById('meat-cnt').textContent=Math.floor(data.meat);
+            document.getElementById('bread-cnt').textContent=Math.floor(data.bread);
+            document.getElementById('meat-prog').style.width=data.meatProg+'%';
+            document.getElementById('bread-prog').style.width=data.breadProg+'%';
+            document.getElementById('sell-fruit').textContent=Math.floor(data.fruit);
+            document.getElementById('sell-vege').textContent=Math.floor(data.vege);
+            document.getElementById('sell-rice').textContent=Math.floor(data.rice);
+            document.getElementById('sell-juice').textContent=Math.floor(data.juice);
+            document.getElementById('sell-salad').textContent=Math.floor(data.salad);
+            document.getElementById('sell-food').textContent=Math.floor(data.food);
+            document.getElementById('sell-meat').textContent=Math.floor(data.meat);
+            document.getElementById('sell-bread').textContent=Math.floor(data.bread);
+            document.getElementById('iron-mine').textContent=Math.floor(data.iron);
+            document.getElementById('gold-ore').textContent=Math.floor(data.goldOre);
+            document.getElementById('dia').textContent=Math.floor(data.dia);
+            
+            // Cập nhật tổng thức ăn tổng hợp
+            const totalFood = Math.floor(data.juice + data.salad + data.food);
+            document.getElementById('total-food').textContent = totalFood;
+            document.getElementById('total-food-value').textContent = totalFood * FOOD_PRICE;
+        }
+
+        // === CHỨC NĂNG NÔNG TRẠI ===
+        function buySeed(type){const p={fruit:10,vege:8,rice:12}[type];if(data.gold<p)return toast('Không đủ tiền mua hạt!');data.gold-=p;data[type+'Seed']++;save();updateUI();toast('✅ Mua hạt giống thành công!');}
+        function harvest(type){const p=type+'Prog',s=type+'Seed';if(data[p]<100)return toast('⏳ Cây chưa chín, vui lòng chờ thêm!');data[type]+=Math.floor(data[s]*1.8);data[p]=0;data[s]=0;save();updateUI();toast('🎉 Thu hoạch thành công!');}
+        function makeFood(type){const req={juice:{m:'fruit',n:5},salad:{m:'vege',n:4},food:{m:'rice',n:6}}[type];if(data[req.m]<req.n)return toast(`❌ Không đủ nguyên liệu! Cần ${req.n} nguyên liệu`);if(data[type+'Prog']>=100){data[type]+=2;data[type+'Prog']=0;data[req.m]-=req.n;toast('✅ Chế biến hoàn tất!');}else{data[type+'Prog']+=30;toast('⏳ Đang chế biến...');}save();updateUI();}
+        function buyMat(type){const p=type==='meat'?15:20;if(data.gold<p)return toast('❌ Không đủ tiền mua nguyên liệu!');data.gold-=p;data[type+'Mat']++;save();updateUI();toast('✅ Mua nguyên liệu thành công!');}
+        function makeProduce(type){const p=type+'Prog',m=type+'Mat';if(data[m]<=0)return toast('❌ Không có nguyên liệu để sản xuất!');if(data[p]<100)return toast('⏳ Đang sản xuất...');data[type]+=type==='meat'?data[m]*2:data[m];data[p]=0;data[m]=0;save();updateUI();toast('✅ Sản xuất hoàn tất!');}
+        function sellItem(type){const n=Math.floor(data[type]);if(n<=0)return toast('❌ Không có sản phẩm để bán!');const p={fruit:1,vege:1,rice:2,meat:3,bread:5}[type];data.gold+=n*p;data[type]=0;save();updateUI();toast(`💰 Bán được ${n*p}đ!`);}
+        
+        // === HÀM BÁN THỨC ĂN TỔNG HỢP - GIÁ 3💰 ===
+        function sellFoodFinal(type){
+            const n=Math.floor(data[type]);
+            if(n<=0)return toast('❌ Không có sản phẩm để bán!');
+            data.gold += n * FOOD_PRICE;
+            data[type] = 0;
+            save();updateUI();
+            toast(`💰 Bán được ${n * FOOD_PRICE}đ!`);
+        }
+        function sellAllFood(){
+            const total = Math.floor(data.juice + data.salad + data.food);
+            if(total <=0) return toast('❌ Không có thức ăn nào để bán!');
+            data.gold += total * FOOD_PRICE;
+            data.juice = data.salad = data.food = 0;
+            save();updateUI();
+            toast(`💰 Bán hết ${total} sản phẩm, nhận ${total * FOOD_PRICE}đ!`);
+        }
+
+        // === CHỨC NĂNG NHIỆM VỤ - CHẠY NGẦM 65S ===
+        function openAndClaim(type){
+            const today = new Date().toDateString();
+            if(data.task.lastReset !== today) {
+                data.task = {link4m:0, linktop:0, taplayma:0, lastReset: today};
+            }
+            if(data.task[type] >= 2) return toast('❌ Đã hết lượt làm nhiệm vụ hôm nay!');
+            
+            window.open(LINKS[type], '_blank');
+            toast('✅ Đã mở link, vui lòng chờ nhận thưởng...');
+            
+            const btn = document.getElementById(`btn-${type}`);
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang xử lý...';
+
+            setTimeout(() => {
+                data.task[type]++;
+                data.iron += 150;
+                data.gold += 150;
+                save();
+                updateUI();
+                
+                btn.disabled = false;
+                btn.textContent = '📩 Mở link & chờ nhận thưởng';
+                toast('🎉 Nhận thưởng thành công: +150 Sắt +150đ!');
+            }, WAIT_TIME * 1000);
+        }
+
+        // === CHỨC NĂNG KHÁC ===
+        function buyWorker(type){const w=WORKER_LIST[type];if(data.gold<w.price)return toast(`❌ Cần ${w.price}đ để mua!`);data.gold-=w.price;if(!data.workers[type])data.workers[type]=0;data.workers[type]++;data.totalCapital+=w.price;data.totalSpeed+=w.speed;save();updateUI();toast(`✅ Mua thành công! Tốc độ đào +${w.speed} q/s`);}
+        function convertOre(){const t=Math.floor(data.iron/7)+Math.floor(data.goldOre)*3+Math.floor(data.dia)*10;if(t<=0)return toast('❌ Không có quặng để đổi!');data.gold+=t;data.iron=data.goldOre=data.dia=0;save();updateUI();toast(`💰 Đổi được ${t}đ!`);}
+        function checkin(){const d=new Date().toDateString();if(data.checkinDate===d)return toast('✅ Hôm nay bạn đã điểm danh rồi!');const n=Math.floor(Math.random()*3)+1;data.ticket+=n;data.checkinDate=d;save();updateUI();toast(`🎉 Nhận được ${n} vé quay thưởng!`);}
+        function startSpin(){if(isSpinning)return toast('⏳ Vòng quay đang chạy, vui lòng chờ!');if(data.ticket<1)return toast('❌ Không đủ vé để quay!');const btn=document.getElementById('spin-btn');btn.disabled=true;btn.textContent='⏳ Đang quay...';isSpinning=true;data.ticket--;save();updateUI();const r=Math.random()*100;let s;if(r<0.1)s={d:288,n:'10 Kim Cương',a:()=>data.dia+=10};else if(r<0.3)s={d:0,n:'100đ',a:()=>data.gold+=100};else if(r<0.5)s={d:72,n:'+5 Vé',a:()=>data.ticket+=5};else if(r<4.5)s={d:144,n:'500 Sắt',a:()=>data.iron+=500};else s={d:216,n:'50đ',a:()=>data.gold+=50};document.getElementById('wheel').style.transform=`rotate(${360*5+s.d+36}deg)`;setTimeout(()=>{s.a();save();updateUI();toast(`🎊 Chúc mừng trúng: ${s.n}!`);btn.disabled=false;btn.textContent='🎯 QUAY NGAY!';isSpinning=false;},4500);}
+
+        // === CHẠY NỀN TỰ ĐỘNG ===
+        setInterval(()=>{
+            const speed=data.totalSpeed;
+            data.iron+=speed*2;
+            if(Math.random()<0.2)data.goldOre+=speed*0.8;
+            if(Math.random()<0.005)data.dia+=0.02;
+            if(data.fruitProg<100&&data.fruitSeed>0)data.fruitProg+=0.25;
+            if(data.vegeProg<100&&data.vegeSeed>0)data.vegeProg+=0.3;
+            if(data.riceProg<100&&data.riceSeed>0)data.riceProg+=0.2;
+            if(data.meatProg<100&&data.meatMat>0)data.meatProg+=0.2;
+            if(data.breadProg<100&&data.breadMat>0)data.breadProg+=0.15;
+            save();updateUI();
+        },2000);
+
+        // === KHỞI ĐỘNG ===
+        updateUI();
+    </script>
+</body>
+</html>
